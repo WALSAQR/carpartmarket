@@ -58,8 +58,8 @@
   <!-- تنبيه حالة الاتصال بـ Cloud Firestore -->
   <div id="firestoreNotice" class="hidden bg-amber-500/10 border-b border-amber-500/20 text-amber-800 text-xs py-2 px-4 text-center flex items-center justify-center gap-2">
     <i class="fa-solid fa-triangle-exclamation text-amber-600"></i>
-    <span>تنويه: يرجى التأكد من تفعيل Cloud Firestore في لوحة تحكم Firebase للتمكن من حفظ وجلب القطع مباشرة.</span>
-    <a href="https://console.firebase.google.com/project/souq-cars-91da4/firestore" target="_blank" class="font-bold underline text-amber-900">إعداد Firestore</a>
+    <span>تنويه: يرجى التأكد من تفعيل Cloud Firestore وضبط Rules بالسماح للكتابة لجميع المستخدمين لتفادي أي خطأ.</span>
+    <a href="https://console.firebase.google.com/" target="_blank" class="font-bold underline text-amber-900">إعداد Firestore</a>
   </div>
 
   <!-- الهيدر ونظام التصفية المباشر -->
@@ -207,702 +207,509 @@
           <span id="payItemPrice" class="font-black text-blue-700"></span>
         </div>
 
-        <form id="creditCardForm" onsubmit="processCardPayment(event)" class="space-y-4">
+        <form id="creditCardForm" onsubmit="processPayment(event)" class="space-y-3 text-xs md:text-sm">
           <div>
-            <label class="block text-xs font-bold text-slate-600 mb-1">اسم صاحب البطاقة</label>
-            <input type="text" required placeholder="John Doe" class="w-full p-3 border border-slate-200 rounded-xl bg-slate-50 outline-none uppercase font-mono tracking-wider text-left text-sm focus:ring-2 focus:ring-blue-500 focus:bg-white transition">
+            <label class="block text-slate-600 font-bold mb-1">اسم حامل البطاقة</label>
+            <input type="text" required placeholder="الاسم كما هو مكتوب بالبطاقة" class="w-full p-3 border border-slate-200 rounded-xl bg-slate-50 focus:ring-2 focus:ring-blue-500 outline-none">
           </div>
           <div>
-            <label class="block text-xs font-bold text-slate-600 mb-1">رقم البطاقة (16 رقم)</label>
-            <input type="text" id="cardNumInput" maxlength="19" required placeholder="xxxx xxxx xxxx xxxx" oninput="formatCardNumber(this)" class="w-full p-3 border border-slate-200 rounded-xl bg-slate-50 outline-none text-left font-mono tracking-widest text-sm focus:ring-2 focus:ring-blue-500 focus:bg-white transition">
+            <label class="block text-slate-600 font-bold mb-1">رقم البطاقة</label>
+            <input type="text" required maxlength="19" placeholder="xxxx xxxx xxxx xxxx" class="w-full p-3 border border-slate-200 rounded-xl bg-slate-50 focus:ring-2 focus:ring-blue-500 outline-none text-left dir-ltr">
           </div>
           <div class="grid grid-cols-2 gap-3">
             <div>
-              <label class="block text-xs font-bold text-slate-600 mb-1">تاريخ الانتهاء</label>
-              <input type="text" maxlength="5" required placeholder="MM/YY" oninput="formatExpiry(this)" class="w-full p-3 border border-slate-200 rounded-xl bg-slate-50 outline-none text-left font-mono text-sm focus:ring-2 focus:ring-blue-500 focus:bg-white transition">
+              <label class="block text-slate-600 font-bold mb-1">تاريخ الانتهاء</label>
+              <input type="text" required placeholder="MM/YY" maxlength="5" class="w-full p-3 border border-slate-200 rounded-xl bg-slate-50 focus:ring-2 focus:ring-blue-500 outline-none text-center dir-ltr">
             </div>
             <div>
-              <label class="block text-xs font-bold text-slate-600 mb-1">CVC</label>
-              <input type="password" maxlength="3" required placeholder="***" class="w-full p-3 border border-slate-200 rounded-xl bg-slate-50 outline-none text-left font-mono tracking-widest text-sm focus:ring-2 focus:ring-blue-500 focus:bg-white transition">
+              <label class="block text-slate-600 font-bold mb-1">رمز الأمان CVC</label>
+              <input type="password" required maxlength="4" placeholder="123" class="w-full p-3 border border-slate-200 rounded-xl bg-slate-50 focus:ring-2 focus:ring-blue-500 outline-none text-center dir-ltr">
             </div>
           </div>
-          <div class="pt-4 pb-4">
-            <button type="submit" id="paySubmitBtn" class="active-scale w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-emerald-600/20 transition text-center flex items-center justify-center gap-2 text-sm">
-              <i class="fa-solid fa-shield-halved"></i> تأكيد الدفع الآمن
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-  </div>
-
-  <!-- مودال Firebase Authentication -->
-  <div id="authModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4 z-50 hidden">
-    <div class="bg-white rounded-t-3xl sm:rounded-xl max-w-md w-full shadow-2xl overflow-hidden max-h-[92vh] flex flex-col">
-      <div class="p-4 bg-slate-900 text-white flex justify-between items-center border-b border-slate-800">
-        <h3 id="authModalTitle" class="text-base md:text-lg font-bold">تسجيل الدخول عبر Firebase Auth</h3>
-        <button onclick="closeAuthModal()" class="text-slate-400 hover:text-white text-2xl font-bold">×</button>
-      </div>
-      
-      <div class="overflow-y-auto flex-1 p-5 md:p-6">
-        <!-- دخول -->
-        <form id="loginForm" onsubmit="handleLogin(event)" class="space-y-4 text-right">
-          <div>
-            <label class="block text-xs md:text-sm font-bold text-slate-700 mb-1">البريد الإلكتروني</label>
-            <input type="email" id="loginEmail" required class="w-full p-3 border border-slate-200 rounded-xl bg-slate-50 outline-none focus:ring-2 focus:ring-blue-500 text-right text-sm">
-          </div>
-          <div>
-            <div class="flex justify-between items-center mb-1">
-              <label class="block text-xs md:text-sm font-bold text-slate-700">كلمة المرور</label>
-              <button type="button" onclick="handleForgotPassword()" class="text-xs text-blue-600 hover:underline font-bold">نسيت كلمة المرور؟</button>
-            </div>
-            <input type="password" id="loginPassword" required class="w-full p-3 border border-slate-200 rounded-xl bg-slate-50 outline-none focus:ring-2 focus:ring-blue-500 text-right text-sm">
-          </div>
-          
-          <button type="submit" id="loginBtn" class="active-scale w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl shadow transition text-sm">تسجيل الدخول</button>
-          
-          <div class="relative flex py-2 items-center">
-            <div class="flex-grow border-t border-slate-200"></div>
-            <span class="flex-shrink mx-4 text-slate-400 text-xs font-medium">أو عبر Google Auth</span>
-            <div class="flex-grow border-t border-slate-200"></div>
-          </div>
-
-          <button type="button" id="googleAuthBtn" onclick="loginWithGoogle()" class="active-scale w-full bg-white hover:bg-slate-50 text-slate-700 font-bold py-2.5 px-4 border border-slate-200 rounded-xl shadow-sm transition flex items-center justify-center gap-2 text-xs md:text-sm">
-            <svg class="w-4 h-4" viewBox="0 0 24 24">
-              <path fill="#EA4335" d="M12.24 10.285V14.4h6.887c-.275 1.565-1.88 4.604-6.887 4.604-4.33 0-7.866-3.577-7.866-8s3.536-8 7.866-8c2.46 0 4.105 1.025 5.047 1.926l3.227-3.11C18.436 2.043 15.533 1 12.24 1 5.48 1 0 6.48 0 13s5.48 12 12.24 12c7.06 0 11.75-4.93 11.75-11.95 0-.81-.08-1.42-.18-1.765H12.24z"/>
-            </svg>
-            <span>الدخول المباشر بـ Gmail</span>
+          <button type="submit" id="submitPayBtn" class="active-scale w-full mt-4 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-emerald-600/20 transition text-sm flex items-center justify-center gap-2">
+            <span>تأكيد ودفع المبلع</span> <i class="fa-solid fa-check"></i>
           </button>
-
-          <p class="text-center text-xs md:text-sm text-slate-500 pt-2">ليس لديك حساب؟ <button type="button" onclick="toggleAuthForms(true)" class="text-blue-600 font-bold underline">إنشاء حساب جديد</button></p>
-        </form>
-
-        <!-- تسجيل جديد -->
-        <form id="registerForm" onsubmit="handleRegister(event)" class="space-y-4 text-right hidden">
-          <div>
-            <label class="block text-xs md:text-sm font-bold text-slate-700 mb-1">الاسم الكامل / المحل</label>
-            <input type="text" id="regName" required class="w-full p-3 border border-slate-200 rounded-xl bg-slate-50 outline-none focus:ring-2 focus:ring-blue-500 text-sm">
-          </div>
-          <div>
-            <label class="block text-xs md:text-sm font-bold text-slate-700 mb-1">البريد الإلكتروني</label>
-            <input type="email" id="regEmail" required class="w-full p-3 border border-slate-200 rounded-xl bg-slate-50 outline-none focus:ring-2 focus:ring-blue-500 text-sm">
-          </div>
-          <div>
-            <label class="block text-xs md:text-sm font-bold text-slate-700 mb-1">كلمة المرور</label>
-            <input type="password" id="regPassword" required class="w-full p-3 border border-slate-200 rounded-xl bg-slate-50 outline-none focus:ring-2 focus:ring-blue-500 text-sm">
-          </div>
-          <button type="submit" id="regBtn" class="active-scale w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-xl shadow transition text-sm">إنشاء حساب في Firebase</button>
-
-          <p class="text-center text-xs md:text-sm text-slate-500 pt-2">لديك حساب؟ <button type="button" onclick="toggleAuthForms(false)" class="text-blue-600 font-bold underline">تسجيل الدخول</button></p>
         </form>
       </div>
     </div>
   </div>
 
-  <!-- مودال إضافة إعلان لـ Firebase -->
-  <div id="adModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4 z-50 hidden">
-    <div class="bg-white rounded-t-3xl sm:rounded-xl max-w-xl w-full max-h-[92vh] sm:max-h-[90vh] overflow-hidden flex flex-col shadow-2xl">
-      <div class="p-4 border-b flex justify-between items-center bg-slate-900 text-white">
-        <h3 class="text-base md:text-lg font-bold">إضافة قطعة جديدة إلى Firestore</h3>
+  <!-- مودال إضافة إعلان قطعة جديد -->
+  <div id="addModal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4 z-50 hidden">
+    <div class="bg-white rounded-t-3xl sm:rounded-2xl max-w-lg w-full shadow-2xl overflow-hidden text-right max-h-[92vh] sm:max-h-[95vh] flex flex-col">
+      <div class="p-4 bg-slate-900 text-white flex justify-between items-center shadow-md">
+        <h3 class="text-base md:text-lg font-bold flex items-center gap-2">
+          <i class="fa-solid fa-square-plus text-blue-400"></i> إضافة قطعة غيار جديدة
+        </h3>
         <button onclick="closeModal()" class="text-slate-400 hover:text-white text-2xl font-bold">×</button>
       </div>
-      
-      <form id="newAdForm" onsubmit="submitForm(event)" class="p-5 md:p-6 space-y-4 text-right overflow-y-auto flex-1">
+
+      <form id="addPartForm" onsubmit="handleFormSubmit(event)" class="p-5 md:p-6 space-y-4 overflow-y-auto flex-1 text-xs md:text-sm">
         <div>
-          <label class="block text-xs md:text-sm font-bold text-slate-700 mb-1">اسم قطعة الغيار *</label>
-          <input type="text" id="formPartName" required placeholder="مثال: سفايف فرامل، كمبريسر" class="w-full p-3 border border-slate-200 rounded-xl outline-none bg-slate-50 focus:ring-2 focus:ring-blue-500 focus:bg-white text-sm transition">
+          <label class="block text-slate-700 font-bold mb-1">اسم القطعة <span class="text-red-500">*</span></label>
+          <input type="text" id="addPartName" required placeholder="مثال: كمبروسر مكيف كامري" class="w-full p-3 border border-slate-200 rounded-xl bg-slate-50 focus:ring-2 focus:ring-blue-500 outline-none">
         </div>
 
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div class="grid grid-cols-2 gap-3">
           <div>
-            <label class="block text-xs md:text-sm font-bold text-slate-700 mb-1">رقم OEM</label>
-            <input type="text" id="formOem" placeholder="04465-02390" class="w-full p-3 border border-slate-200 rounded-xl outline-none bg-slate-50 focus:ring-2 focus:ring-blue-500 focus:bg-white text-sm transition">
+            <label class="block text-slate-700 font-bold mb-1">الماركة <span class="text-red-500">*</span></label>
+            <select id="addPartBrand" onchange="onAddBrandChange()" required class="w-full p-3 border border-slate-200 rounded-xl bg-slate-50 focus:ring-2 focus:ring-blue-500 outline-none">
+              <option value="">اختر الماركة</option>
+            </select>
           </div>
           <div>
-            <label class="block text-xs md:text-sm font-bold text-slate-700 mb-1">حالة القطعة *</label>
-            <select id="formStatus" required class="w-full p-3 border border-slate-200 rounded-xl outline-none bg-slate-50 focus:ring-2 focus:ring-blue-500 focus:bg-white text-sm transition appearance-none cursor-pointer">
+            <label class="block text-slate-700 font-bold mb-1">الموديل <span class="text-red-500">*</span></label>
+            <select id="addPartModel" required class="w-full p-3 border border-slate-200 rounded-xl bg-slate-50 focus:ring-2 focus:ring-blue-500 outline-none">
+              <option value="">اختر الموديل</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-slate-700 font-bold mb-1">السنة <span class="text-red-500">*</span></label>
+            <select id="addPartYear" required class="w-full p-3 border border-slate-200 rounded-xl bg-slate-50 focus:ring-2 focus:ring-blue-500 outline-none">
+              <option value="">اختر السنة</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-slate-700 font-bold mb-1">السعر (ر.س) <span class="text-red-500">*</span></label>
+            <input type="number" id="addPartPrice" required placeholder="350" class="w-full p-3 border border-slate-200 rounded-xl bg-slate-50 focus:ring-2 focus:ring-blue-500 outline-none">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-slate-700 font-bold mb-1">رقم OEM الاصلي</label>
+            <input type="text" id="addPartOem" placeholder="اختياري: 88310-06160" class="w-full p-3 border border-slate-200 rounded-xl bg-slate-50 focus:ring-2 focus:ring-blue-500 outline-none font-mono">
+          </div>
+          <div>
+            <label class="block text-slate-700 font-bold mb-1">حالة القطعة</label>
+            <select id="addPartStatus" class="w-full p-3 border border-slate-200 rounded-xl bg-slate-50 focus:ring-2 focus:ring-blue-500 outline-none">
+              <option value="مستعمل أصلي">مستعمل أصلي</option>
               <option value="جديد">جديد</option>
-              <option value="مستعمل">مستعمل / سكراب</option>
+              <option value="تجديد/تشليح">تجديد / تشليح</option>
             </select>
-          </div>
-        </div>
-
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <div>
-            <label class="block text-xs md:text-sm font-bold text-slate-700 mb-1">الماركة *</label>
-            <select id="formBrand" required onchange="onFormBrandChange()" class="w-full p-3 border border-slate-200 rounded-xl outline-none bg-slate-50 focus:ring-2 focus:ring-blue-500 focus:bg-white text-sm transition appearance-none cursor-pointer">
-              <option value="">اختر</option>
-            </select>
-          </div>
-          <div>
-            <label class="block text-xs md:text-sm font-bold text-slate-700 mb-1">الموديل *</label>
-            <select id="formModel" required class="w-full p-3 border border-slate-200 rounded-xl outline-none bg-slate-50 focus:ring-2 focus:ring-blue-500 focus:bg-white text-sm transition appearance-none cursor-pointer">
-              <option value="">اختر الماركة أولاً</option>
-            </select>
-          </div>
-          <div>
-            <label class="block text-xs md:text-sm font-bold text-slate-700 mb-1">سنة الصنع *</label>
-            <select id="formYear" required class="w-full p-3 border border-slate-200 rounded-xl outline-none bg-slate-50 focus:ring-2 focus:ring-blue-500 focus:bg-white text-sm transition appearance-none cursor-pointer">
-              <option value="">اختر</option>
-            </select>
-          </div>
-        </div>
-
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <div>
-            <label class="block text-xs md:text-sm font-bold text-slate-700 mb-1">السعر (ر.ع) *</label>
-            <input type="number" step="0.1" id="formPrice" required placeholder="25" class="w-full p-3 border border-slate-200 rounded-xl outline-none bg-slate-50 focus:ring-2 focus:ring-blue-500 focus:bg-white text-sm transition">
-          </div>
-          <div>
-            <label class="block text-xs md:text-sm font-bold text-slate-700 mb-1">رقم الهاتف *</label>
-            <input type="tel" id="formPhone" required placeholder="96899999999" class="w-full p-3 border border-slate-200 rounded-xl outline-none bg-slate-50 focus:ring-2 focus:ring-blue-500 focus:bg-white text-sm transition">
           </div>
         </div>
 
         <div>
-          <label class="block text-xs md:text-sm font-bold text-slate-700 mb-1">صورة القطعة *</label>
-          <div class="flex flex-col items-center justify-center w-full p-4 border-2 border-slate-300 border-dashed rounded-xl bg-slate-50 hover:bg-slate-100 cursor-pointer relative transition">
-            <input type="file" id="formFile" accept="image/*" onchange="previewFormImage()" class="absolute inset-0 opacity-0 cursor-pointer" required />
-            <div class="text-center pointer-events-none">
-              <p class="mb-1 text-xs md:text-sm text-slate-500 font-bold">📷 اضغط هنا لاختيار صورة من الاستوديو</p>
-              <p id="fileSelectedName" class="text-[11px] text-blue-600 font-bold">لم يتم اختيار صورة بعد</p>
-            </div>
-            <img id="formPreview" src="" alt="معاينة" class="mt-3 max-h-28 rounded-xl shadow-sm hidden" />
-          </div>
+          <label class="block text-slate-700 font-bold mb-1">رقم الهاتف للتواصل <span class="text-red-500">*</span></label>
+          <input type="tel" id="addPartPhone" required placeholder="05xxxxxxxx" class="w-full p-3 border border-slate-200 rounded-xl bg-slate-50 focus:ring-2 focus:ring-blue-500 outline-none text-left dir-ltr">
         </div>
 
-        <div class="flex gap-2 pt-4 border-t border-slate-100 pb-4">
-          <button type="submit" id="submitBtn" class="active-scale flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3.5 rounded-xl transition shadow-md text-sm">
-            نشر إلى Firebase 🚀
-          </button>
-          <button type="button" onclick="closeModal()" class="w-24 bg-slate-200 hover:bg-slate-300 text-slate-700 font-medium py-3.5 rounded-xl text-sm">
-            إلغاء
+        <div>
+          <label class="block text-slate-700 font-bold mb-1">صورة القطعة</label>
+          <input type="file" id="addPartImgFile" accept="image/*" class="w-full text-xs text-slate-500 file:mr-0 file:ml-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer">
+          <span class="text-[11px] text-slate-400 block mt-1">يمكنك رفع صورة مباشرة أو تركها ليتم تعيين صورة افتراضية.</span>
+        </div>
+
+        <div class="pt-2">
+          <button type="submit" id="savePartBtn" class="active-scale w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-blue-600/20 transition flex items-center justify-center gap-2">
+            <span>نشر الإعلان في Firebase</span> <i class="fa-solid fa-cloud-arrow-up"></i>
           </button>
         </div>
       </form>
     </div>
   </div>
 
-  <!-- منطق البرمجة المربوط مع Firebase فقط بدون أي سيرفر خارجي -->
+  <!-- صندوق التنبيهات المخصص (بديل عن alert) -->
+  <div id="toast" class="fixed bottom-5 left-1/2 -translate-x-1/2 z-50 bg-slate-900 text-white px-5 py-3 rounded-xl shadow-2xl text-xs md:text-sm font-medium transition-all duration-300 opacity-0 pointer-events-none transform translate-y-3 flex items-center gap-2.5 max-w-[90vw]">
+    <span id="toastIcon"><i class="fa-solid fa-info-circle text-blue-400"></i></span>
+    <span id="toastMsg">...</span>
+  </div>
+
   <script>
-    // 1. تهيئة Firebase الأساسية
-    const firebaseConfig = {
-      apiKey: "AIzaSyDCCslegLp3SZe_T-3nGdwsnEwcYA0QPdw",
-      authDomain: "souq-cars-91da4.firebaseapp.com",
-      projectId: "souq-cars-91da4",
-      storageBucket: "souq-cars-91da4.firebasestorage.app",
-      messagingSenderId: "1041189672349",
-      appId: "1:1041189672349:web:3940a87dbbf97cf7278b74"
+    // --- بيانات سيارات للتصفية المنسدلة ---
+    const CAR_DATA = {
+      "تويوتا": ["كامري", "كورولا", "لاندكروزر", "هايلوكس", "يارس", "أفالون"],
+      "هونداي": ["سوناتا", "إلنترا", "أكسنت", "توسان", "سانتافي"],
+      "نيسان": ["باترول", "ألتيما", "صني", "ماكسيما", "أكستيرا"],
+      "فورد": ["فيكتوريا", "إكسبلورر", "تورس", "F-150"],
+      "لكزس": ["LS460", "LX570", "ES350", "GS350"]
     };
 
-    firebase.initializeApp(firebaseConfig);
-    const auth = firebase.auth();
-    const db = firebase.firestore();
-    const storage = firebase.storage();
+    const YEARS = Array.from({length: 25}, (_, i) => (2025 - i).toString());
 
-    // خيارات السيارات
-    var allDataOptions = {
-      brands: ["تويوتا", "نيسان", "هوندا", "هيونداي", "كيا", "لكزس", "مرسيدس", "بي إم دبليو"],
-      models: {
-        "تويوتا": ["كامري", "كورولا", "لاندكروزر", "ياريس", "افالون", "هايلاكس"],
-        "نيسان": ["التيما", "مكسيما", "باترول", "صني", "تيدا"],
-        "هوندا": ["أكورد", "سيفيك", "سي آر في"],
-        "هيونداي": ["النترا", "سوناتا", "توسان", "أكسنت", "سنتافي"],
-        "كيا": ["أوبتيما", "سيراتو", "سبورتاج", "سورينتو"],
-        "لكزس": ["LS430", "LS460", "ES350", "LX570", "GS350"],
-        "مرسيدس": ["S-Class", "E-Class", "C-Class", "G-Class"],
-        "بي إم دبليو": ["الفئة الثالثة", "الفئة الخامسة", "الفئة السابعة", "X5"]
-      },
-      years: ["2025", "2024", "2023", "2022", "2021", "2020", "2019", "2018", "2017", "2016", "2015", "2014", "2013", "2012", "2011", "2010"]
-    };
+    // --- تكوين Firebase بالوضع الضمني / المخصص ---
+    // المعرف التلقائي الموفر من بيئة العمل
+    const appId = typeof __app_id !== 'undefined' ? __app_id : 'souq-cars-default';
+    
+    // تكوين الفايربيس من البيئة أو التكوين الافتراضي للمشروع
+    let firebaseConfig;
+    if (typeof __firebase_config !== 'undefined') {
+      try {
+        firebaseConfig = JSON.parse(__firebase_config);
+      } catch(e) {
+        console.error("خطأ في قراءة firebaseConfig من البيئة", e);
+      }
+    }
+    if (!firebaseConfig) {
+      firebaseConfig = {
+        apiKey: "AIzaSyDummyKeyForFallbackPurposeOnly12345",
+        authDomain: "souq-cars-91da4.firebaseapp.com",
+        projectId: "souq-cars-91da4",
+        storageBucket: "souq-cars-91da4.appspot.com",
+        messagingSenderId: "1234567890",
+        appId: "1:1234567890:web:abcdef123456"
+      };
+    }
 
-    var currentUser = null;
-    var loadedProducts = [];
-    var selectedProductForPay = null;
+    // تهيئة Firebase
+    let db = null;
+    let auth = null;
+    let currentUser = null;
+    let allPartsList = [];
+    let selectedProductForModal = null;
 
-    document.addEventListener("DOMContentLoaded", function() {
-      initFilters(allDataOptions);
-
-      // الاستماع لحالة المستخدم من Firebase Auth مباشرة
-      auth.onAuthStateChanged(function(user) {
-        if (user) {
-          currentUser = {
-            uid: user.uid,
-            email: user.email,
-            fullName: user.displayName || user.email.split('@')[0]
-          };
-        } else {
-          currentUser = null;
+    window.addEventListener('load', async () => {
+      populateDropdowns();
+      
+      try {
+        if (!firebase.apps.length) {
+          firebase.initializeApp(firebaseConfig);
         }
-        renderAuthUI();
-      });
+        db = firebase.firestore();
+        auth = firebase.auth();
 
-      // جلب البيانات مباشرة من Firebase Firestore
-      executeSearch();
+        // تسجيل الدخول
+        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+          await auth.signInWithCustomToken(__initial_auth_token);
+        } else {
+          await auth.signInAnonymously();
+        }
+
+        auth.onAuthStateChanged((user) => {
+          currentUser = user;
+          updateAuthUI(user);
+        });
+
+        // قراءة البيانات المباشرة
+        listenToFirestoreParts();
+
+      } catch (err) {
+        console.warn("تنبيه الاتصال بـ Firebase:", err);
+        document.getElementById('userBadge').innerText = "وضع المعاينة المحلي";
+        document.getElementById('firestoreNotice').classList.remove('hidden');
+        loadFallbackMockData();
+      }
     });
 
-    function renderAuthUI() {
-      var badge = document.getElementById("userBadge");
-      var actionContainer = document.getElementById("authActionContainer");
-      
-      if (currentUser && currentUser.fullName) {
-        badge.innerHTML = "👋 المستخدم: <span class='text-white font-bold'>" + currentUser.fullName + "</span>";
-        actionContainer.innerHTML = `<button onclick="logout()" class="active-scale bg-red-600 hover:bg-red-700 text-white font-bold py-1 px-2.5 rounded-lg text-xs shadow transition">خروج</button>`;
-      } else {
-        badge.innerHTML = "👤 الحساب: <span class='text-amber-400 font-bold'>غير مسجل</span>";
-        actionContainer.innerHTML = `<button onclick="openAuthModal()" class="active-scale bg-blue-600 hover:bg-blue-700 text-white font-bold py-1 px-2.5 rounded-lg text-xs shadow transition">تسجيل الدخول 🔐</button>`;
-      }
-    }
+    // تعبئة قائمة الماركات والسنوات
+    function populateDropdowns() {
+      const brandFilter = document.getElementById('brandFilter');
+      const addPartBrand = document.getElementById('addPartBrand');
+      const yearFilter = document.getElementById('yearFilter');
+      const addPartYear = document.getElementById('addPartYear');
 
-    function loginWithGoogle() {
-      var btn = document.getElementById("googleAuthBtn");
-      var oldText = btn.innerHTML;
-      btn.disabled = true;
-      btn.innerHTML = `<i class="fa-solid fa-spinner animate-spin"></i> جاري الاتصال...`;
-
-      var provider = new firebase.auth.GoogleAuthProvider();
-      auth.signInWithPopup(provider)
-        .then(function(result) {
-          btn.disabled = false;
-          btn.innerHTML = oldText;
-          closeAuthModal();
-          alert("🎉 تم تسجيل الدخول بنجاح عبر حساب Gmail: \n" + result.user.email);
-        })
-        .catch(function(error) {
-          btn.disabled = false;
-          btn.innerHTML = oldText;
-          if (error.code === 'auth/popup-blocked' || error.code === 'auth/popup-closed-by-user') {
-            auth.signInWithRedirect(provider);
-          } else {
-            alert("فشل الدخول عبر Google: " + error.message);
-          }
-        });
-    }
-
-    function openAuthModal() { 
-      document.getElementById("authModal").classList.remove("hidden");
-      toggleAuthForms(false); 
-      document.body.style.overflow = "hidden";
-    }
-    
-    function closeAuthModal() { 
-      document.getElementById("authModal").classList.add("hidden"); 
-      document.body.style.overflow = "auto";
-    }
-
-    function toggleAuthForms(showRegister) {
-      var title = document.getElementById("authModalTitle");
-      var loginF = document.getElementById("loginForm");
-      var regF = document.getElementById("registerForm");
-      
-      if (showRegister) {
-        title.innerText = "إنشاء حساب جديد في Firebase";
-        loginF.classList.add("hidden");
-        regF.classList.remove("hidden");
-      } else {
-        title.innerText = "تسجيل الدخول عبر Firebase Auth";
-        loginF.classList.remove("hidden");
-        regF.classList.add("hidden");
-      }
-    }
-
-    function handleRegister(e) {
-      e.preventDefault();
-      var btn = document.getElementById("regBtn");
-      btn.disabled = true;
-      btn.innerText = "جاري إنشاء الحساب...";
-      
-      var name = document.getElementById("regName").value;
-      var email = document.getElementById("regEmail").value;
-      var pass = document.getElementById("regPassword").value;
-      
-      auth.createUserWithEmailAndPassword(email, pass)
-        .then(function(userCredential) {
-          return userCredential.user.updateProfile({ displayName: name });
-        })
-        .then(function() {
-          btn.disabled = false;
-          btn.innerText = "إنشاء حساب في Firebase";
-          alert("🎉 تم إنشاء الحساب بنجاح!");
-          document.getElementById("registerForm").reset();
-          closeAuthModal();
-        })
-        .catch(function(error) {
-          btn.disabled = false;
-          btn.innerText = "إنشاء حساب في Firebase";
-          alert("خطأ: " + error.message);
-        });
-    }
-
-    function handleLogin(e) {
-      e.preventDefault();
-      var btn = document.getElementById("loginBtn");
-      btn.disabled = true;
-      btn.innerText = "جاري التحقق...";
-      
-      var email = document.getElementById("loginEmail").value;
-      var pass = document.getElementById("loginPassword").value;
-      
-      auth.signInWithEmailAndPassword(email, pass)
-        .then(function() {
-          btn.disabled = false;
-          btn.innerText = "تسجيل الدخول";
-          closeAuthModal();
-          document.getElementById("loginForm").reset();
-          alert("تم تسجيل الدخول بنجاح!");
-        })
-        .catch(function(error) {
-          btn.disabled = false;
-          btn.innerText = "تسجيل الدخول";
-          alert("خطأ: " + error.message);
-        });
-    }
-
-    function handleForgotPassword() {
-      var emailInput = document.getElementById("loginEmail").value.trim();
-      if (!emailInput) {
-        alert("يرجى كتابة البريد الإلكتروني في الخانة أولاً.");
-        return;
-      }
-      auth.sendPasswordResetEmail(emailInput)
-        .then(function() {
-          alert("تم إرسال رابط إعادة تعيين كلمة المرور إلى بريدك.");
-        })
-        .catch(function(error) {
-          alert("خطأ: " + error.message);
-        });
-    }
-
-    function logout() {
-      auth.signOut().then(function() {
-        alert("تم تسجيل الخروج بنجاح!");
+      Object.keys(CAR_DATA).forEach(brand => {
+        brandFilter.add(new Option(brand, brand));
+        addPartBrand.add(new Option(brand, brand));
       });
-    }
 
-    function initFilters(options) {
-      var filterBrand = document.getElementById("brandFilter");
-      var filterYear = document.getElementById("yearFilter");
-      var formBrand = document.getElementById("formBrand");
-      var formYear = document.getElementById("formYear");
-      
-      options.brands.forEach(b => {
-        filterBrand.options.add(new Option(b, b));
-        formBrand.options.add(new Option(b, b));
-      });
-      options.years.forEach(y => {
-        filterYear.options.add(new Option(y, y));
-        formYear.options.add(new Option(y, y));
+      YEARS.forEach(y => {
+        yearFilter.add(new Option(y, y));
+        addPartYear.add(new Option(y, y));
       });
     }
 
     function onBrandFilterChange() {
-      var brand = document.getElementById("brandFilter").value.trim();
-      var modelSelect = document.getElementById("modelFilter");
+      const brand = document.getElementById('brandFilter').value;
+      const modelSelect = document.getElementById('modelFilter');
       modelSelect.innerHTML = '<option value="">كل الموديلات</option>';
-      if (brand && allDataOptions.models[brand]) {
-        allDataOptions.models[brand].forEach(m => modelSelect.options.add(new Option(m, m)));
+      if (brand && CAR_DATA[brand]) {
+        CAR_DATA[brand].forEach(m => modelSelect.add(new Option(m, m)));
       }
     }
 
-    function onFormBrandChange() {
-      var brand = document.getElementById("formBrand").value.trim();
-      var modelSelect = document.getElementById("formModel");
+    function onAddBrandChange() {
+      const brand = document.getElementById('addPartBrand').value;
+      const modelSelect = document.getElementById('addPartModel');
       modelSelect.innerHTML = '<option value="">اختر الموديل</option>';
-      if (brand && allDataOptions.models[brand]) {
-        allDataOptions.models[brand].forEach(m => modelSelect.options.add(new Option(m, m)));
+      if (brand && CAR_DATA[brand]) {
+        CAR_DATA[brand].forEach(m => modelSelect.add(new Option(m, m)));
       }
     }
 
-    function previewFormImage() {
-      var fileInput = document.getElementById("formFile");
-      var preview = document.getElementById("formPreview");
-      var label = document.getElementById("fileSelectedName");
-      
-      if (fileInput.files.length > 0) {
-        var file = fileInput.files[0];
-        label.innerText = "✓ تم اختيار: " + file.name;
-        
-        var reader = new FileReader();
-        reader.onloadend = function () {
-          preview.src = reader.result;
-          preview.classList.remove("hidden");
-        }
-        reader.readAsDataURL(file);
+    function updateAuthUI(user) {
+      const userBadge = document.getElementById('userBadge');
+      const authActionContainer = document.getElementById('authActionContainer');
+      if (user) {
+        const displayId = user.uid ? user.uid.substring(0, 6) : 'عضو';
+        userBadge.innerHTML = `<i class="fa-solid fa-user-check text-emerald-400"></i> متصل: <span class="font-mono text-white">${displayId}..</span>`;
+        authActionContainer.innerHTML = ``;
       } else {
-        preview.src = "";
-        preview.classList.add("hidden");
-        label.innerText = "لم يتم اختيار صورة بعد";
+        userBadge.innerText = "غير مسجل";
       }
     }
 
-    // جلب البيانات المباشرة من Firebase Firestore
-    function executeSearch() {
-      document.getElementById("loading").classList.remove("hidden");
-      document.getElementById("productsContainer").classList.add("hidden");
-      
-      var brand = document.getElementById("brandFilter").value;
-      var model = document.getElementById("modelFilter").value;
-      var year = document.getElementById("yearFilter").value;
+    function listenToFirestoreParts() {
+      if (!db) return;
 
-      let query = db.collection("parts");
+      // مسار القواعد المباشرة المسند للحاوية
+      const collectionRef = db.collection('artifacts').doc(appId).collection('public').doc('data').collection('parts');
 
-      if (brand) query = query.where("brand", "==", brand);
-      if (model) query = query.where("model", "==", model);
-      if (year) query = query.where("year", "==", year);
+      collectionRef.onSnapshot((snapshot) => {
+        document.getElementById('loading').classList.add('hidden');
+        document.getElementById('productsContainer').classList.remove('hidden');
 
-      query.get().then(function(querySnapshot) {
-        document.getElementById("firestoreNotice").classList.add("hidden");
-        document.getElementById("statusIndicator").className = "inline-block w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse";
-        
-        var products = [];
-        querySnapshot.forEach(function(doc) {
-          products.push({ id: doc.id, ...doc.data() });
+        allPartsList = [];
+        snapshot.forEach((doc) => {
+          allPartsList.push({ id: doc.id, ...doc.data() });
         });
-        renderProducts(products);
-      }).catch(function(error) {
-        console.warn("Firestore error / Rules setup needed:", error.message);
-        document.getElementById("firestoreNotice").classList.remove("hidden");
-        document.getElementById("statusIndicator").className = "inline-block w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse";
-        renderProducts([]);
+
+        if (allPartsList.length === 0) {
+          // إذا لم توجد بيانات بالـ Firestore نقوم بإضافة بيانات أولية توضيحية
+          seedDefaultFirestoreData(collectionRef);
+        } else {
+          renderProducts(allPartsList);
+        }
+      }, (error) => {
+        console.error("Firestore error:", error);
+        document.getElementById('firestoreNotice').classList.remove('hidden');
+        loadFallbackMockData();
       });
     }
 
-    function renderProducts(products) {
-      var container = document.getElementById("productsContainer");
-      document.getElementById("loading").classList.add("hidden");
-      container.classList.remove("hidden");
-      container.innerHTML = "";
-      
-      loadedProducts = products ? products : []; 
-      
-      if (!products || products.length === 0) {
-        container.innerHTML = '<div class="col-span-full text-center py-16 text-slate-400 text-sm font-medium">لا توجد إعلانات مسجلة حالياً في Firebase Cloud Firestore أو يرجى التأكد من إنشاء الإعلان الأول.</div>';
+    // إضافة بيانات تجريبية بالفايربيس عند البدء لأول مرة
+    async function seedDefaultFirestoreData(collectionRef) {
+      const samples = [
+        {
+          name: "كمبروسر مكيف دنسو أصلي",
+          brand: "تويوتا",
+          model: "كامري",
+          year: "2020",
+          price: "650",
+          oem: "88310-06160",
+          status: "مستعمل أصلي",
+          phone: "0501234567",
+          seller: "مركز العز لقطع الغيار",
+          imgUrl: "https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?auto=format&fit=crop&w=600&q=80",
+          createdAt: Date.now()
+        },
+        {
+          name: "شمعة أمريكية يسار LED",
+          brand: "فورد",
+          model: "تورس",
+          year: "2021",
+          price: "850",
+          oem: "DG9Z-13008-A",
+          status: "جديد",
+          phone: "0559876543",
+          seller: "تشليح الجزيرة",
+          imgUrl: "https://images.unsplash.com/photo-1511919884226-fd3cad34687c?auto=format&fit=crop&w=600&q=80",
+          createdAt: Date.now() - 1000
+        }
+      ];
+
+      for (let s of samples) {
+        await collectionRef.add(s);
+      }
+    }
+
+    function loadFallbackMockData() {
+      document.getElementById('loading').classList.add('hidden');
+      document.getElementById('productsContainer').classList.remove('hidden');
+      allPartsList = [
+        {
+          id: "m1",
+          name: "مقص أمامي سفلي جهة اليمين",
+          brand: "هونداي",
+          model: "سوناتا",
+          year: "2018",
+          price: "220",
+          oem: "54501-C1000",
+          status: "مستعمل أصلي",
+          phone: "0561122334",
+          seller: "مؤسسة المجد للسيارات",
+          imgUrl: "https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?auto=format&fit=crop&w=600&q=80"
+        }
+      ];
+      renderProducts(allPartsList);
+    }
+
+    function renderProducts(list) {
+      const container = document.getElementById('productsContainer');
+      container.innerHTML = '';
+
+      if (list.length === 0) {
+        container.innerHTML = `
+          <div class="col-span-full text-center py-12 text-slate-400">
+            <i class="fa-solid fa-box-open text-4xl mb-2"></i>
+            <p class="font-bold">لا توجد قطع غيار مطابقة لخيارات البحث</p>
+          </div>
+        `;
         return;
       }
-      
-      products.forEach((p, index) => {
-        var partOem = p.oem ? p.oem : "غير متوفر";
-        var safeName = p.name ? p.name.replace(/['"\\`]/g, "") : "قطعة غيار";
-        var safePhone = p.phone ? p.phone.replace(/[^0-9]/g, "") : "";
-        var sellerName = p.sellerName ? p.sellerName : "معلن موثوق"; 
-        var imageUrl = p.image ? p.image : "https://placehold.co/300x200?text=No+Image";
-        
-        var waLink = "https://wa.me/" + safePhone + "?text=" + encodeURIComponent("مرحباً، أستفسر عن قطعة: " + safeName);
-        var telLink = "tel:" + safePhone;
 
-        var cardHTML = `
-          <div class="bg-white border border-slate-100 rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all duration-200 flex flex-col group">
-            <div onclick="openProductDetailModal(${index})" class="relative bg-slate-900 h-44 sm:h-48 w-full cursor-pointer overflow-hidden flex items-center justify-center">
-              <img src="${imageUrl}" alt="${safeName}" class="object-cover w-full h-full group-hover:scale-105 transition duration-300" onerror="this.src='https://placehold.co/300x200?text=No+Image'">
-              <span class="absolute top-2 right-2 text-[10px] font-bold px-2.5 py-1 rounded-lg bg-blue-600 text-white shadow-sm">${p.status || 'جديد'}</span>
-            </div>
-            
-            <div class="p-4 flex-1 flex flex-col justify-between text-right">
-              <div>
-                <h3 onclick="openProductDetailModal(${index})" class="font-bold text-base md:text-lg text-slate-900 mb-1 cursor-pointer hover:text-blue-600 transition truncate">${safeName}</h3>
-                <p class="text-[11px] text-blue-600 font-bold mb-2 flex items-center gap-1">
-                  <i class="fa-solid fa-user text-[9px]"></i> المعلن: ${sellerName}
-                </p>
-                <p class="text-xs text-slate-400 mb-2">OEM: <span class="font-mono font-medium">${partOem}</span></p>
-                <div class="text-[11px] md:text-xs text-slate-500 mb-3 bg-slate-50 p-2 rounded-xl border border-slate-100/60 truncate">
-                  الملاءمة: ${p.brand} ${p.model} (${p.year})
-                </div>
+      list.forEach(p => {
+        const card = document.createElement('div');
+        card.className = "bg-white rounded-2xl shadow-sm hover:shadow-md transition-all border border-slate-100 overflow-hidden flex flex-col active-scale cursor-pointer";
+        card.onclick = () => openProductDetailModal(p);
+
+        card.innerHTML = `
+          <div class="relative bg-slate-100 h-44 w-full flex items-center justify-center overflow-hidden">
+            <img src="${p.imgUrl || 'https://placehold.co/600x400/e2e8f0/475569?text=Souq+Cars'}" alt="${p.name}" class="object-cover w-full h-full hover:scale-105 transition-transform duration-300">
+            <span class="absolute top-2 right-2 bg-slate-900/80 backdrop-blur-sm text-white text-[10px] font-bold px-2.5 py-1 rounded-full">
+              ${p.status || 'مستعمل'}
+            </span>
+          </div>
+          <div class="p-4 flex-1 flex flex-col justify-between text-right space-y-2">
+            <div>
+              <div class="flex items-center gap-1.5 text-[11px] font-bold text-blue-600 mb-1">
+                <span>${p.brand}</span> • <span>${p.model}</span> • <span>${p.year}</span>
               </div>
-              
-              <div>
-                <div class="text-lg font-black text-blue-600 mb-3">${p.price} ر.ع.</div>
-                <div class="grid grid-cols-2 gap-2">
-                  <a href="${waLink}" target="_blank" class="active-scale bg-emerald-500 hover:bg-emerald-600 text-white text-center text-xs font-bold py-2.5 rounded-xl flex items-center justify-center gap-1.5 cursor-pointer shadow-sm transition">
-                    <i class="fa-brands fa-whatsapp text-sm"></i> واتساب
-                  </a>
-                  <a href="${telLink}" class="active-scale bg-slate-800 hover:bg-slate-900 text-white text-center text-xs font-bold py-2.5 rounded-xl flex items-center justify-center gap-1.5 cursor-pointer shadow-sm transition">
-                    <i class="fa-solid fa-phone text-[10px]"></i> اتصال
-                  </a>
-                </div>
-              </div>
+              <h3 class="font-bold text-slate-800 text-sm md:text-base line-clamp-2">${p.name}</h3>
             </div>
-          </div>`;
-          
-          container.insertAdjacentHTML('beforeend', cardHTML);
+            <div class="pt-2 border-t border-slate-50 flex items-center justify-between">
+              <span class="text-xs text-slate-400 font-mono">${p.oem ? 'OEM: '+p.oem : ''}</span>
+              <span class="text-base font-black text-blue-700">${p.price} <span class="text-xs font-normal">ر.س</span></span>
+            </div>
+          </div>
+        `;
+        container.appendChild(card);
       });
     }
 
-    function openProductDetailModal(index) {
-      var p = loadedProducts[index];
-      if (!p) return;
+    function executeSearch() {
+      const brand = document.getElementById('brandFilter').value;
+      const model = document.getElementById('modelFilter').value;
+      const year = document.getElementById('yearFilter').value;
 
-      selectedProductForPay = p; 
+      const filtered = allPartsList.filter(p => {
+        return (!brand || p.brand === brand) &&
+               (!model || p.model === model) &&
+               (!year || p.year === year);
+      });
 
-      var safeName = p.name ? p.name.replace(/['"\\`]/g, "") : "قطعة غيار";
-      var safePhone = p.phone ? p.phone.replace(/[^0-9]/g, "") : "";
-      var sellerName = p.sellerName ? p.sellerName : "معلن موثوق";
-
-      document.getElementById("modalPartImage").src = p.image || 'https://placehold.co/500x400?text=No+Image';
-      document.getElementById("modalPartImage").onerror = function() { this.src = 'https://placehold.co/500x400?text=No+Image'; };
-      document.getElementById("modalPartStatus").innerText = p.status || 'جديد';
-      document.getElementById("modalPartName").innerText = safeName;
-      document.getElementById("modalPartPrice").innerText = p.price + " ر.ع.";
-      document.getElementById("modalSellerName").innerText = sellerName;
-      document.getElementById("modalPartOem").innerText = p.oem ? p.oem : "غير متوفر";
-      document.getElementById("modalPartBrand").innerText = p.brand;
-      document.getElementById("modalPartModel").innerText = p.model;
-      document.getElementById("modalPartYear").innerText = p.year;
-
-      document.getElementById("modalWaBtn").href = "https://wa.me/" + safePhone + "?text=" + encodeURIComponent("مرحباً " + sellerName + "، أستفسر عبر منصة سوق كارز عن قطعة: " + safeName);
-      document.getElementById("modalTelBtn").href = "tel:" + safePhone;
-
-      document.getElementById("productDetailModal").classList.remove("hidden");
-      document.body.style.overflow = "hidden"; 
+      renderProducts(filtered);
+      showToast("تم تصفية النتائج بنجاح", "success");
     }
 
-    function closeProductDetailModal(event) {
-      if(!event || event.target === document.getElementById("productDetailModal") || event === null) {
-        document.getElementById("productDetailModal").classList.add("hidden");
-        document.body.style.overflow = "auto"; 
+    function openProductDetailModal(product) {
+      selectedProductForModal = product;
+      document.getElementById('modalPartImage').src = product.imgUrl || 'https://placehold.co/600x400/e2e8f0/475569?text=Souq+Cars';
+      document.getElementById('modalPartStatus').innerText = product.status || 'مستعمل';
+      document.getElementById('modalPartName').innerText = product.name;
+      document.getElementById('modalPartPrice').innerText = product.price + " ر.س";
+      document.getElementById('modalSellerName').innerText = product.seller || "تاجر مسجل في سوق كارز";
+      document.getElementById('modalPartOem').innerText = product.oem || "غير متوفر";
+      document.getElementById('modalPartBrand').innerText = product.brand;
+      document.getElementById('modalPartModel').innerText = product.model;
+      document.getElementById('modalPartYear').innerText = product.year;
+
+      const cleanPhone = (product.phone || "").replace(/\D/g, '');
+      document.getElementById('modalWaBtn').href = `https://wa.me/966${cleanPhone.replace(/^0/, '')}?text=السلام%20عليكم،%20أستفسر%20عن%20قطعة:%20${encodeURIComponent(product.name)}`;
+      document.getElementById('modalTelBtn').href = `tel:${cleanPhone}`;
+
+      document.getElementById('productDetailModal').classList.remove('hidden');
+    }
+
+    function closeProductDetailModal(e) {
+      if (!e || e.target.id === 'productDetailModal') {
+        document.getElementById('productDetailModal').classList.add('hidden');
       }
     }
 
     function openPaymentModal() {
-      if (!currentUser || !currentUser.email) {
-        alert("يرجى تسجيل الدخول أولاً للمتابعة مع الشراء!");
-        openAuthModal();
-        return;
-      }
-      if (!selectedProductForPay) return;
-
-      document.getElementById("payItemName").innerText = selectedProductForPay.name;
-      document.getElementById("payItemPrice").innerText = selectedProductForPay.price + " ر.ع.";
-      
-      document.getElementById("paymentModal").classList.remove("hidden");
+      if (!selectedProductForModal) return;
+      document.getElementById('payItemName').innerText = selectedProductForModal.name;
+      document.getElementById('payItemPrice').innerText = selectedProductForModal.price + " ر.س";
+      document.getElementById('paymentModal').classList.remove('hidden');
     }
 
     function closePaymentModal() {
-      document.getElementById("paymentModal").classList.add("hidden");
-      document.getElementById("creditCardForm").reset();
+      document.getElementById('paymentModal').classList.add('hidden');
     }
 
-    function formatCardNumber(input) {
-      var v = input.value.replace(/\s+/g, '').replace(/[^0-9]/gi, '');
-      var matches = v.match(/\d{4,16}/g);
-      var match = matches && matches[0] || '';
-      var parts = [];
-
-      for (var i=0, len=match.length; i<len; i+=4) {
-        parts.push(match.substring(i, i+4));
-      }
-
-      input.value = parts.length > 0 ? parts.join(' ') : v;
-    }
-
-    function formatExpiry(input) {
-      var v = input.value.replace(/\s+/g, '').replace(/[^0-9]/gi, '');
-      if (v.length >= 2) {
-        input.value = v.substring(0, 2) + '/' + v.substring(2, 4);
-      } else {
-        input.value = v;
-      }
-    }
-
-    function processCardPayment(e) {
+    function processPayment(e) {
       e.preventDefault();
-      var btn = document.getElementById("paySubmitBtn");
+      const btn = document.getElementById('submitPayBtn');
       btn.disabled = true;
-      btn.innerHTML = `<i class="fa-solid fa-spinner animate-spin"></i> جاري إتمام العملية...`;
+      btn.innerHTML = `<i class="fa-solid fa-spinner animate-spin"></i> جاري إتمام الدفع...`;
 
-      setTimeout(function() {
+      setTimeout(() => {
         btn.disabled = false;
-        btn.innerHTML = `<i class="fa-solid fa-shield-halved"></i> تأكيد الدفع الآمن`;
-        var orderReference = Math.floor(100000 + Math.random() * 900000); 
-        alert("🎉 تم خصم المبلغ (" + selectedProductForPay.price + " ر.ع) بنجاح.\nرقم العملية المرجعي: " + orderReference);
+        btn.innerHTML = `تأكيد ودفع المبلغ <i class="fa-solid fa-check"></i>`;
         closePaymentModal();
         closeProductDetailModal(null);
-      }, 2000); 
+        showToast("🎉 تم الدفع بنجاح! سيتم التواصل معك لشحن القطعة", "success");
+      }, 1800);
     }
 
-    // إرسال البيانات وحفظها في Firebase Firestore و Storage
-    function submitForm(event) {
-      event.preventDefault();
-      if (!currentUser || !currentUser.email) {
-        alert("يجب عليك تسجيل الدخول أولاً بنظام Firebase Auth!");
-        openAuthModal();
-        return;
-      }
+    function openModal() {
+      document.getElementById('addModal').classList.remove('hidden');
+    }
 
-      var btn = document.getElementById("submitBtn");
-      btn.disabled = true;
-      btn.innerText = "جاري الحفظ في Cloud Firestore...";
+    function closeModal() {
+      document.getElementById('addModal').classList.add('hidden');
+    }
 
-      var fileInput = document.getElementById("formFile");
-      var formData = {
-        name: document.getElementById("formPartName").value,
-        oem: document.getElementById("formOem").value,
-        status: document.getElementById("formStatus").value,
-        brand: document.getElementById("formBrand").value,
-        model: document.getElementById("formModel").value,
-        year: document.getElementById("formYear").value,
-        price: document.getElementById("formPrice").value,
-        phone: document.getElementById("formPhone").value,
-        sellerName: currentUser.fullName || currentUser.email,
-        sellerUid: currentUser.uid,
-        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    async function handleFormSubmit(e) {
+      e.preventDefault();
+      
+      const saveBtn = document.getElementById('savePartBtn');
+      saveBtn.disabled = true;
+      saveBtn.innerHTML = `<i class="fa-solid fa-circle-notch animate-spin"></i> جاري النشر في Firebase...`;
+
+      const newPart = {
+        name: document.getElementById('addPartName').value,
+        brand: document.getElementById('addPartBrand').value,
+        model: document.getElementById('addPartModel').value,
+        year: document.getElementById('addPartYear').value,
+        price: document.getElementById('addPartPrice').value,
+        oem: document.getElementById('addPartOem').value || '',
+        status: document.getElementById('addPartStatus').value,
+        phone: document.getElementById('addPartPhone').value,
+        seller: currentUser?.uid ? `مستخدم (${currentUser.uid.substring(0, 5)})` : 'عضو مسجل',
+        imgUrl: "https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?auto=format&fit=crop&w=600&q=80",
+        createdAt: Date.now()
       };
 
-      if (fileInput.files.length > 0) {
-        var file = fileInput.files[0];
-        var storageRef = storage.ref('parts_images/' + Date.now() + '_' + file.name);
+      try {
+        if (db) {
+          const collectionRef = db.collection('artifacts').doc(appId).collection('public').doc('data').collection('parts');
+          await collectionRef.add(newPart);
+          showToast("تم إضافة القطعة بنجاح في قاعدة بيانات Firebase!", "success");
+        } else {
+          allPartsList.unshift({ id: 'loc-' + Date.now(), ...newPart });
+          renderProducts(allPartsList);
+          showToast("تم التخزين محلياً (تعذر الاتصال بـ Firebase)", "info");
+        }
 
-        storageRef.put(file).then(function(snapshot) {
-          return snapshot.ref.getDownloadURL();
-        }).then(function(downloadURL) {
-          formData.image = downloadURL;
-          savePartToFirestore(formData, btn);
-        }).catch(function(error) {
-          console.warn("Storage fallback to base64 encoding", error);
-          var reader = new FileReader();
-          reader.onloadend = function(e) {
-            formData.image = e.target.result;
-            savePartToFirestore(formData, btn);
-          };
-          reader.readAsDataURL(file);
-        });
+        document.getElementById('addPartForm').reset();
+        closeModal();
+      } catch (error) {
+        console.error("Save error:", error);
+        showToast("حدث خطأ أثناء حفظ القطعة في قاعدة البيانات", "error");
+      } finally {
+        saveBtn.disabled = false;
+        saveBtn.innerHTML = `<span>نشر الإعلان في Firebase</span> <i class="fa-solid fa-cloud-arrow-up"></i>`;
+      }
+    }
+
+    function showToast(msg, type = "info") {
+      const toast = document.getElementById('toast');
+      const toastMsg = document.getElementById('toastMsg');
+      const toastIcon = document.getElementById('toastIcon');
+
+      toastMsg.innerText = msg;
+
+      if (type === "success") {
+        toastIcon.innerHTML = `<i class="fa-solid fa-circle-check text-emerald-400"></i>`;
+      } else if (type === "error") {
+        toastIcon.innerHTML = `<i class="fa-solid fa-circle-xmark text-rose-400"></i>`;
       } else {
-        formData.image = "https://placehold.co/300x200?text=No+Image";
-        savePartToFirestore(formData, btn);
+        toastIcon.innerHTML = `<i class="fa-solid fa-info-circle text-blue-400"></i>`;
       }
-    }
 
-    function savePartToFirestore(formData, btn) {
-      db.collection("parts").add(formData)
-        .then(function() {
-          btn.disabled = false;
-          btn.innerText = "نشر إلى Firebase 🚀";
-          alert("🚀 تم إضافة إعلانك وحفظه مباشرة في Firebase Cloud Firestore!");
-          document.getElementById("newAdForm").reset();
-          document.getElementById("formPreview").classList.add("hidden");
-          document.getElementById("fileSelectedName").innerText = "لم يتم اختيار صورة بعد";
-          closeModal();
-          executeSearch();
-        })
-        .catch(function(error) {
-          btn.disabled = false;
-          btn.innerText = "نشر إلى Firebase 🚀";
-          alert("خطأ في حفظ البيانات بـ Firebase Firestore: " + error.message);
-        });
-    }
+      toast.classList.remove('opacity-0', 'pointer-events-none', 'translate-y-3');
+      toast.classList.add('opacity-100', 'translate-y-0');
 
-    function openModal() { 
-      if (!currentUser || !currentUser.email) {
-        alert("يرجى تسجيل الدخول أولاً لتتمكن من إضافة إعلانات جديدة.");
-        openAuthModal();
-        return;
-      }
-      document.getElementById("adModal").classList.remove("hidden"); 
-      document.body.style.overflow = "hidden";
-    }
-
-    function closeModal() { 
-      document.getElementById("adModal").classList.add("hidden"); 
-      document.body.style.overflow = "auto";
+      setTimeout(() => {
+        toast.classList.remove('opacity-100', 'translate-y-0');
+        toast.classList.add('opacity-0', 'pointer-events-none', 'translate-y-3');
+      }, 3500);
     }
   </script>
 </body>
